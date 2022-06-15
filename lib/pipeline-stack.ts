@@ -5,6 +5,8 @@ import { Construct } from "constructs";
 import { CodeCommit } from './construct/codecommit';
 import { Ecr } from './construct/ecr';
 import { Kms } from './construct/kms';
+import { Iam } from './construct/iam';
+import { CodeBuild } from "./construct/codeBuild";
 
 //ServiceName, UserBranch를 추가 선언하여 interface를 생성
 export interface MyStackProps extends StackProps {
@@ -27,6 +29,20 @@ export class PipelineStack extends Stack {
 
         const codecommit = new CodeCommit(this, 'CodeCommit', {
             ServiceName: props.ServiceName
+        });
+
+        const iam = new Iam(this, 'Iam', {
+            ServiceName: props.ServiceName,
+            KmsCmk: kms.pipelineCmk,
+            EcrRepo: ecr.ecrRepo
+        });
+
+        const codeBuild = new CodeBuild(this, 'CodeBuild', {
+            ServiceName: props.ServiceName,
+            TimeOut: Duration.minutes(10),
+            EcrRepoUri: ecr.ecrRepo.repositoryUri,
+            CodebuildRole: iam.codebuildRole,
+            KmsCmk: kms.pipelineCmk
         });
     }
 }
